@@ -1,0 +1,111 @@
+# diaporthe_fol_shootlength_analysis_plot.R
+# Analysis and publication-quality plot of Diaporthe atlantica and Fol inoculation on wheat shoot length
+# Author: Pereira et al.
+# Date: 2025
+# For manuscript: Diaporthe atlantica improves tomato resistance against the vascular pathogen Fusarium oxysporum f. sp. lycopersici, GitHub repository and supplementary material
+
+# =============================
+# 1. Load required packages
+# =============================
+# Uncomment and run once if packages are not installed:
+# install.packages(c("ggplot2", "dplyr", "tidyr"))
+
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+
+# =============================
+# 2. Data Entry
+# =============================
+
+# Shoot length measurements (cm) from greenhouse experiment
+No_Fol_Uninoculated <- c(36.5, 41, 41, 37.5, 41, 40, 37.5, 35.5, 38, 42, 40, 45)
+No_Fol_Diaporthe <- c(32, 25, 22, 29, 27, 23, 20.5, 30, 30, 20, 33.5, 34)
+Fol_Uninoculated <- c(3.5, 7, 3, 5.5, 5, 8, 3, 14, 21, 8, NA, 5)
+Fol_Diaporthe <- c(36, 38, 34, 30, 16, 29, 40, 3, 3.5, 40, 3, 4.5)
+
+# Create a wide-format data frame
+df <- data.frame(
+  No_Fol_Uninoculated,
+  No_Fol_Diaporthe,
+  Fol_Uninoculated,
+  Fol_Diaporthe
+)
+
+# Reshape to long format for analysis
+df_long <- df %>%
+  pivot_longer(cols = everything(),
+               names_to = "Treatment",
+               values_to = "Value") %>%
+  mutate(
+    Fol = ifelse(grepl("^No_Fol", Treatment), "No-Fol", "Fol"),
+    Diaporthe = ifelse(grepl("Diaporthe$", Treatment), "Diaporthe", "Uninoculated")
+  ) %>%
+  mutate(
+    Fol = factor(Fol, levels = c("No-Fol", "Fol")),
+    Diaporthe = factor(Diaporthe, levels = c("Uninoculated", "Diaporthe"))
+  )
+
+# =============================
+# 3. Summary Statistics
+# =============================
+
+df_summary <- df_long %>%
+  group_by(Fol, Diaporthe) %>%
+  summarise(
+    mean = mean(Value, na.rm = TRUE),
+    se = sd(Value, na.rm = TRUE) / sqrt(sum(!is.na(Value)))
+  ) %>%
+  ungroup()
+
+# Add significance letters from your ANOVA/Tukey analysis
+df_summary$Letters <- c("a", "b", "c", "b")
+
+# =============================
+# 4. Define Color Palette
+# =============================
+
+fill_colors <- c("Uninoculated" = "#85C441",  # Green
+                 "Diaporthe" = "#F38E33")     # Orange
+
+# =============================
+# 5. Plot Generation
+# =============================
+
+p <- ggplot(df_summary, aes(x = Fol, y = mean, fill = Diaporthe)) +
+  geom_bar(stat = "identity",
+           position = position_dodge(width = 0.8),
+           color = "black", width = 0.7, linewidth = 1) +
+  geom_errorbar(aes(ymin = mean - se, ymax = mean + se),
+                position = position_dodge(width = 0.8),
+                width = 0.2, linewidth = 0.8) +
+  geom_text(aes(label = Letters),
+            position = position_dodge(width = 0.8),
+            vjust = -0.8, size = 6) +
+  scale_fill_manual(values = fill_colors, name = NULL) +
+  labs(
+    x = NULL,
+    y = "Shoot length (cm)",
+    title = expression("Diaporthe x Fol"^"***")
+  ) +
+  theme_bw(base_size = 14) +
+  theme(
+    axis.text = element_text(size = 14, color = "black"),
+    axis.title = element_text(size = 16, color = "black"),
+    plot.title = element_text(size = 16, face = "bold", hjust = 0.5),
+    legend.position = c(0.8, 0.9),
+    legend.background = element_blank(),
+    legend.key.size = unit(0.7, "cm"),
+    legend.text = element_text(size = 14),
+    panel.border = element_rect(color = "black", size = 1),
+    panel.grid = element_blank()
+  ) +
+  ylim(0, 45)
+
+# Display plot
+print(p)
+
+# =============================
+# ggsave("shoot_length_diaporthe_fol_plot.png", p, width = 6, height = 6, dpi = 600)
+
+# End of script
