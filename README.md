@@ -21,7 +21,7 @@ The analysis pipeline includes:
 
 1. Clone this repository:
     ```bash
-    git clone https://github.com/EricCPereira/diaporthe_fol_analysis.R/blob/main/Statistic%20analysis%20ANOVA
+    git clone https://github.com/EricCPereira/diaporthe_fol_analysis.R/tree/main
 
 2. Open `Statistic analysis ANOVA` in RStudio.
 3. Run the script to reproduce the analysis and figure.
